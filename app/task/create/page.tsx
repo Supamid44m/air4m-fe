@@ -45,9 +45,9 @@ export default function CreateTask() {
   });
 
   const [isDisableForm, setIsDisableForm] = React.useState(false);
-  const [activityFormErrorMsg, setActivityFormErrorMsg] = React.useState("");
-  const [selectedDateErrorMsg, setSelectedDateErrorMsg] = React.useState("");
   const [formError, setformError] = React.useState(false);
+  const [formErrorMsg, setFormErrorMsg] =
+    React.useState<Record<string, string>>();
 
   const defaultOptions: AutocompleteOption[] = [
     {
@@ -117,11 +117,10 @@ export default function CreateTask() {
   }
 
   async function submitForm(body: ITaskRequestDto) {
-    const formIsValid = validateForm(body);
+    const errors = validateForm(body);
 
-    if (!formIsValid) {
-      setActivityFormErrorMsg("activity is required");
-      setSelectedDateErrorMsg("Date time is required");
+    if (Object.keys(errors).length > 0) {
+      setFormErrorMsg(errors);
       setformError(true);
       return;
     }
@@ -135,17 +134,21 @@ export default function CreateTask() {
   }
 
   function validateForm(formValue: ITaskRequestDto) {
-    if (!formValue.activity?.trim() || !formValue.dateTimeSelected.trim()) {
-      return false;
+    const errors: Record<string, string> = {};
+    if (!formValue.activity?.trim()) {
+      errors.activity = "Activity is required";
     }
-    return true;
+
+    if (!formValue.dateTimeSelected) {
+      errors.dateTimeSelected = "Date is required";
+    }
+
+    return errors;
   }
 
   function setDefaultOptionForm() {
     setFormValue(cloneformValue);
-
-    setActivityFormErrorMsg("");
-    setSelectedDateErrorMsg("");
+    setFormErrorMsg({});
     setformError(false);
     setDateValue(null);
     setSelectedOption(null);
@@ -212,7 +215,7 @@ export default function CreateTask() {
                     label="Activity"
                     required={true}
                     error={formError}
-                    helperText={activityFormErrorMsg}
+                    helperText={formErrorMsg?.activity ?? ""}
                   />
                 )}
               />
@@ -230,7 +233,7 @@ export default function CreateTask() {
                   textField: {
                     required: true,
                     error: formError,
-                    helperText: selectedDateErrorMsg,
+                    helperText: formErrorMsg?.dateTimeSelected ?? "",
                   },
                 }}
               />
