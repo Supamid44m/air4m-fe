@@ -31,7 +31,6 @@ export default function CreateTask() {
     React.useState<AutocompleteOption | null>(null);
   const [inputValue, setInputValue] = React.useState("");
   const [dateValue, setDateValue] = React.useState<Dayjs | null>(null);
-  const [age, setAge] = React.useState("");
   const [optionLists, setOptionList] = React.useState<AutocompleteOption[]>([]);
   const [keyword, setKeyword] = React.useState("");
   const [formValue, setFormValue] = React.useState<ITaskRequestDto>({
@@ -39,7 +38,16 @@ export default function CreateTask() {
     dateTimeSelected: "",
     createdDate: currentime,
   });
+  const [cloneformValue, setCloneFormValue] = React.useState<ITaskRequestDto>({
+    activity: "",
+    dateTimeSelected: "",
+    createdDate: currentime,
+  });
+
   const [isDisableForm, setIsDisableForm] = React.useState(false);
+  const [activityFormErrorMsg, setActivityFormErrorMsg] = React.useState("");
+  const [selectedDateErrorMsg, setSelectedDateErrorMsg] = React.useState("");
+  const [formError, setformError] = React.useState(false);
 
   const defaultOptions: AutocompleteOption[] = [
     {
@@ -54,6 +62,7 @@ export default function CreateTask() {
   ];
 
   React.useEffect(() => {
+    setCloneFormValue(formValue);
     setOptionList(defaultOptions);
   }, []);
 
@@ -108,15 +117,36 @@ export default function CreateTask() {
   }
 
   async function submitForm(body: ITaskRequestDto) {
+    const formIsValid = validateForm(body);
+
+    if (!formIsValid) {
+      setActivityFormErrorMsg("activity is required");
+      setSelectedDateErrorMsg("Date time is required");
+      setformError(true);
+      return;
+    }
     try {
-      return await taskApi.createTask(body);
+      await taskApi.createTask(body);
     } catch (err) {
       console.log(err);
+    } finally {
+      setDefaultOptionForm();
     }
-    setDefaultOptionForm
+  }
+
+  function validateForm(formValue: ITaskRequestDto) {
+    if (!formValue.activity?.trim() || !formValue.dateTimeSelected.trim()) {
+      return false;
+    }
+    return true;
   }
 
   function setDefaultOptionForm() {
+    setFormValue(cloneformValue);
+
+    setActivityFormErrorMsg("");
+    setSelectedDateErrorMsg("");
+    setformError(false);
     setDateValue(null);
     setSelectedOption(null);
     setInputValue("");
@@ -177,22 +207,15 @@ export default function CreateTask() {
                   setKeyword(newInputValue);
                 }}
                 renderInput={(params) => (
-                  <TextField {...params} label="Activity" />
+                  <TextField
+                    {...params}
+                    label="Activity"
+                    required={true}
+                    error={formError}
+                    helperText={activityFormErrorMsg}
+                  />
                 )}
               />
-            </div>
-
-            <div className="mt-10">
-              {age === "other" && (
-                <TextField
-                  id="outlined-basic"
-                  label="Title"
-                  variant="outlined"
-                  value={formValue?.activity}
-                  onChange={(e) => updateForm("activity", e.target.value)}
-                  sx={{ input: { color: "black" } }}
-                />
-              )}
             </div>
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -203,11 +226,19 @@ export default function CreateTask() {
                 format="DD/MM/YYYY HH:mm:ss"
                 disablePast
                 sx={{ color: "white" }}
+                slotProps={{
+                  textField: {
+                    required: true,
+                    error: formError,
+                    helperText: selectedDateErrorMsg,
+                  },
+                }}
               />
             </LocalizationProvider>
 
             <div className="mt-10">
               <Button
+                type="submit"
                 variant="contained"
                 onClick={() => submitForm(formValue)}
                 className="w-full"

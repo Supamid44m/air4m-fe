@@ -72,8 +72,6 @@ export default function Task() {
 
   function handleDuplicate(activity:string){
     router.push(`task/create?activity=${encodeURIComponent(activity)}`)
-    // console.log(activity)
-    
   }
   type TaskRow = ITaskDto & { id: string };
 
@@ -104,6 +102,10 @@ export default function Task() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function onCancelTask(){
+    
   }
 
   React.useEffect(() => {

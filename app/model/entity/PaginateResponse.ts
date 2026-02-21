@@ -1,4 +1,4 @@
-import { IPaginateDto } from "../inteface/task/IPaginateDto";
+import { IPaginateDto } from "../inteface/IPaginateDto";
 
 export class PaginateResponse<T> {
   content: T[];
