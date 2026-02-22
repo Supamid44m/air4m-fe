@@ -24,6 +24,7 @@ import { useParams } from "next/navigation";
 
 import { useSearchParams } from "next/navigation";
 import { isNullOrUndefined } from "@/app/utils/objectUtil";
+import ErrorModal from "@/app/component/ErrorModal";
 export default function CreateTask() {
   const params = useSearchParams();
   const currentime = dayjs().format("DD/MM/YYYY HH:mm:ss");
@@ -45,9 +46,13 @@ export default function CreateTask() {
   });
 
   const [isDisableForm, setIsDisableForm] = React.useState(false);
-  const [formError, setformError] = React.useState(false);
-  const [formErrorMsg, setFormErrorMsg] =
-    React.useState<Record<string, string>>();
+  React.useState<Record<string, string>>();
+
+  const [formError, setFormError] = React.useState<ErrorResponse>({
+    errors: [],
+  });
+  const [pageError, setPageError] = React.useState<Error | null>(null);
+  const [isSubmitSuccess, setIsSubmitSucces] = React.useState(false);
 
   const defaultOptions: AutocompleteOption[] = [
     {
@@ -117,45 +122,88 @@ export default function CreateTask() {
   }
 
   async function submitForm(body: ITaskRequestDto) {
-    const errors = validateForm(body);
+    const validationResult = validateForm(body);
 
-    if (Object.keys(errors).length > 0) {
-      setFormErrorMsg(errors);
-      setformError(true);
+    if (validationResult.errors.length > 0) {
+      setFormError(validationResult);
       return;
     }
     try {
       await taskApi.createTask(body);
+      setIsSubmitSucces(true);
     } catch (err) {
+      setPageError(err as Error);
       console.log(err);
     } finally {
-      setDefaultOptionForm();
+      setTimeout(() => {
+        setDefaultOptionForm();
+      }, 1000);
     }
   }
 
-  function validateForm(formValue: ITaskRequestDto) {
-    const errors: Record<string, string> = {};
+  type FieldError = {
+    key: string;
+    message: string;
+    isError: boolean;
+  };
+  type ErrorResponse = {
+    errors: FieldError[];
+  };
+
+  function validateForm(formValue: ITaskRequestDto): ErrorResponse {
+    const error: ErrorResponse = {
+      errors: [],
+    };
+
     if (!formValue.activity?.trim()) {
-      errors.activity = "Activity is required";
+      error.errors.push({
+        key: "activity",
+        message: "Activity is required",
+        isError: true,
+      });
     }
 
     if (!formValue.dateTimeSelected) {
-      errors.dateTimeSelected = "Date is required";
+      error.errors.push({
+        key: "dateTimeSelected",
+        message: "Date Time is required",
+        isError: true,
+      });
     }
 
-    return errors;
+    return error;
   }
 
   function setDefaultOptionForm() {
     setFormValue(cloneformValue);
-    setFormErrorMsg({});
-    setformError(false);
+    setFormError({
+      errors: [],
+    });
     setDateValue(null);
     setSelectedOption(null);
     setInputValue("");
     setKeyword("");
     setOptionList(defaultOptions);
     setIsDisableForm(false);
+    setIsSubmitSucces(false);
+  }
+
+  function hasError(key: string, error: ErrorResponse): boolean {
+    if (error.errors.length < 0) {
+      return false;
+    }
+    return (
+      error?.errors?.find((e) => e.key === key && e.isError)?.isError ?? false
+    );
+  }
+
+  function getErrorMessage(key: string, error: ErrorResponse): string {
+    if (error.errors.length < 0) {
+      return "";
+    }
+    return (
+      error?.errors?.find((e) => e.key === key && e.isError)?.message ?? ""
+    );
   }
 
   const boxStyle = `
@@ -185,11 +233,18 @@ export default function CreateTask() {
 
   return (
     <Fragment>
-      <div className="flex flex-row justify-center items-center  ">
+      {pageError && (
+        <ErrorModal
+          error={pageError}
+          onRetry={() => null}
+          onClose={() => setPageError(null)}
+        ></ErrorModal>
+      )}
+      <div className="flex flex-row justify-center items-center">
         <div className={boxStyle}>
           <h1 className="font-bold">CREATE TASK</h1>
-          <FormControl>
-            <div className="mt-10">
+          <FormControl className="">
+            <div className="mt-5 mb-5">
               <Autocomplete
                 disabled={isDisableForm}
                 className=""
@@ -214,37 +269,43 @@ export default function CreateTask() {
                     {...params}
                     label="Activity"
                     required={true}
-                    error={formError}
-                    helperText={formErrorMsg?.activity ?? ""}
+                    error={hasError("activity", formError)}
+                    helperText={getErrorMessage("activity", formError)}
                   />
                 )}
               />
             </div>
+            <div>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DateTimePicker
+                  label="Select Date"
+                  value={dateValue}
+                  onChange={(dt) => setDateTime(dt)}
+                  format="DD/MM/YYYY HH:mm:ss"
+                  disablePast
+                  sx={{ color: "white" }}
+                  slotProps={{
+                    textField: {
+                      required: true,
+                      fullWidth: true,
+                      error: hasError("dateTimeSelected", formError),
+                      helperText: getErrorMessage(
+                        "dateTimeSelected",
+                        formError,
+                      ),
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+            </div>
 
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateTimePicker
-                label="Select Date"
-                value={dateValue}
-                onChange={(dt) => setDateTime(dt)}
-                format="DD/MM/YYYY HH:mm:ss"
-                disablePast
-                sx={{ color: "white" }}
-                slotProps={{
-                  textField: {
-                    required: true,
-                    error: formError,
-                    helperText: formErrorMsg?.dateTimeSelected ?? "",
-                  },
-                }}
-              />
-            </LocalizationProvider>
-
-            <div className="mt-10">
+            <div className="mt-5">
               <Button
                 type="submit"
                 variant="contained"
                 onClick={() => submitForm(formValue)}
                 className="w-full"
+                // disabled={formError}
               >
                 CREATE
               </Button>
@@ -252,6 +313,7 @@ export default function CreateTask() {
           </FormControl>
         </div>
       </div>
+      {isSubmitSuccess && <div className="w-1/2 bg-white">create success</div>}
     </Fragment>
   );
 }
