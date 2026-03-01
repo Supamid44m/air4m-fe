@@ -108,6 +108,9 @@ export default function CreateTask() {
       setDateValue(newValue);
       const dt = newValue?.format("DD/MM/YYYY HH:mm:ss");
       updateForm("dateTimeSelected", dt);
+      setFormError((prev) => ({
+        errors: prev.errors.filter((e) => e.key !== "dateTimeSelected"),
+      }));
     }
   }
 
@@ -115,6 +118,9 @@ export default function CreateTask() {
     key: K,
     value: ITaskRequestDto[K],
   ) {
+    setFormError((prev) => ({
+      errors: prev.errors.filter((e) => e.key !== key),
+    }));
     setFormValue((prev) => ({
       ...prev,
       [key]: value,
@@ -286,6 +292,7 @@ export default function CreateTask() {
                   sx={{ color: "white" }}
                   slotProps={{
                     textField: {
+                      
                       required: true,
                       fullWidth: true,
                       error: hasError("dateTimeSelected", formError),

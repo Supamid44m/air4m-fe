@@ -68,10 +68,10 @@ export default function Task() {
     },
   ];
 
-  const router = useRouter()
+  const router = useRouter();
 
-  function handleDuplicate(activity:string){
-    router.push(`task/create?activity=${encodeURIComponent(activity)}`)
+  function handleDuplicate(activity: string) {
+    router.push(`task/create?activity=${encodeURIComponent(activity)}`);
   }
   type TaskRow = ITaskDto & { id: string };
 
@@ -104,9 +104,7 @@ export default function Task() {
     }
   }
 
-  function onCancelTask(){
-    
-  }
+  function onCancelTask() {}
 
   React.useEffect(() => {
     fecthData(paginationModel.page, paginationModel.pageSize);
@@ -118,7 +116,6 @@ export default function Task() {
 
   return (
     <React.Fragment>
-      <div className="">
         {error && (
           <ErrorModal
             error={error}
@@ -128,21 +125,24 @@ export default function Task() {
             onClose={() => setError(null)}
           ></ErrorModal>
         )}
-        <Paper sx={{ height: "100%", width: "100%" }}>
-          <DataGrid
-            rows={rowItem}
-            columns={dataTableItem}
-            loading={loading}
-            initialState={{ pagination: { paginationModel } }}
-            // pageSizeOptions={[5, 10]}
-            // checkboxSelection
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            paginationMode="server"
-            rowCount={rowCount}
-            // sx={{ border: 0 ,color:"red"}}
-          />
-        </Paper>
+      <div className="relative">
+        <div>
+          <Paper sx={{ height: "100%", width: "100%" }}>
+            <DataGrid
+              rows={rowItem}
+              columns={dataTableItem}
+              loading={loading}
+              initialState={{ pagination: { paginationModel } }}
+              // pageSizeOptions={[5, 10]}
+              // checkboxSelection
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              paginationMode="server"
+              rowCount={rowCount}
+              // sx={{ border: 0 ,color:"red"}}
+            />
+          </Paper>
+        </div>
       </div>
     </React.Fragment>
   );
